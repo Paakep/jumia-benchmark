@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jumia Price Benchmark</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --orange: #E8501A; --orange-light: #FDF0EB;
+  --green: #1D9E75; --green-light: #E1F5EE;
+  --red: #A32D2D; --red-light: #FCEBEB;
+  --gray: #5F5E5A; --gray-light: #F1EFE8;
+  --border: #E0DED6; --text: #1a1a18; --text-muted: #73726C;
+  --bg: #F7F6F2; --card: #FFFFFF; --radius: 10px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+/* ── LOGIN PAGE ── */
+#login-page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+.login-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 40px 36px; width: 100%; max-width: 380px; text-align: center;
+}
+.login-logo { background: var(--orange); color: white; font-weight: 700; font-size: 20px; padding: 10px 22px; border-radius: 8px; display: inline-block; margin-bottom: 20px; }
+.login-card h2 { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+.login-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+.login-input {
+  width: 100%; padding: 11px 14px; font-size: 15px; border: 1px solid var(--border);
+  border-radius: 8px; margin-bottom: 12px; font-family: inherit; text-align: center;
+  letter-spacing: 0.1em;
+}
+.login-input:focus { outline: none; border-color: var(--orange); }
+.login-btn {
+  width: 100%; padding: 11px; background: var(--orange); color: white; border: none;
+  border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.login-btn:hover { opacity: 0.9; }
+.login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.login-error { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 18px; }
+.login-spinner { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+.login-spinner.visible { display: block; }
+
+/* ── APP ── */
+#app-page { display: none; }
+header { background: var(--card); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 16px; height: 56px; }
+.logo { background: var(--orange); color: white; font-weight: 700; font-size: 15px; padding: 6px 14px; border-radius: 6px; }
+header h1 { font-size: 16px; font-weight: 500; flex: 1; }
+.logout-btn { font-size: 12px; color: var(--text-muted); background: none; border: 1px solid var(--border); padding: 5px 12px; border-radius: 6px; cursor: pointer; }
+.logout-btn:hover { background: var(--gray-light); }
+.container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+.tabs { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; width: fit-content; margin-bottom: 14px; }
+.tab { padding: 7px 18px; font-size: 13px; cursor: pointer; background: var(--card); color: var(--text-muted); border: none; transition: background 0.15s; }
+.tab.active { background: var(--gray-light); color: var(--text); font-weight: 500; }
+textarea { width: 100%; padding: 10px 12px; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; resize: vertical; min-height: 80px; font-family: inherit; }
+textarea:focus { outline: none; border-color: var(--orange); }
+.upload-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 28px; text-align: center; color: var(--text-muted); font-size: 14px; cursor: pointer; transition: border-color 0.2s; }
+.upload-zone:hover { border-color: var(--orange); }
+.upload-zone input { display: none; }
+.btn { padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: opacity 0.15s; }
+.btn-primary { background: var(--orange); color: white; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary { background: var(--gray-light); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.action-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.metric { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.metric-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+.metric-value { font-size: 26px; font-weight: 600; }
+.metric-sub { font-size: 11px; color: #aaa; margin-top: 2px; }
+.metric-value.green { color: var(--green); }
+.metric-value.red { color: var(--red); }
+.metric-value.orange { color: var(--orange); }
+.filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+select { padding: 7px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: 7px; background: var(--card); color: var(--text); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 680px; }
+th { text-align: left; padding: 10px; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border); white-space: nowrap; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+td { padding: 11px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--bg); }
+.prod-cell { display: flex; align-items: center; gap: 10px; }
+.prod-img { width: 38px; height: 38px; object-fit: contain; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
+.prod-img-ph { width: 38px; height: 38px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #ccc; }
+.prod-name { font-weight: 500; font-size: 13px; max-width: 200px; line-height: 1.3; }
+.prod-sku { font-size: 11px; color: var(--text-muted); }
+.price { font-weight: 600; }
+.price-win { color: var(--green); }
+.comp-price { font-size: 12px; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border); display: inline-block; white-space: nowrap; }
+.comp-price.lower { border-color: var(--red); color: var(--red); background: var(--red-light); }
+.comp-price.higher { border-color: var(--green); color: var(--green); background: var(--green-light); }
+.comp-price.na { color: #ccc; border-color: #eee; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+.badge-win { background: var(--green-light); color: var(--green); }
+.badge-lose { background: var(--red-light); color: var(--red); }
+.badge-tie { background: var(--gray-light); color: var(--gray); }
+.badge-nd { background: #f5f5f5; color: #aaa; }
+.empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.loader { display: none; align-items: center; gap: 10px; padding: 12px 0; color: var(--text-muted); font-size: 13px; }
+.loader.visible { display: flex; }
+.spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 8px; display: none; }
+.progress-bar.visible { display: block; }
+.progress-fill { height: 100%; background: var(--orange); transition: width 0.3s; border-radius: 2px; }
+.alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; }
+.alert-error { background: var(--red-light); color: var(--red); border: 1px solid #f5c1c1; }
+.section-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.stab { padding: 8px 16px; font-size: 13px; cursor: pointer; color: var(--text-muted); border: none; background: transparent; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.stab.active { color: var(--orange); border-bottom-color: var(--orange); font-weight: 500; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.file-name { font-size: 13px; color: var(--text-muted); padding: 8px 0; }
+@media (max-width: 640px) {
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════ LOGIN ══════════════════════════════ -->
+<div id="login-page">
+  <div class="login-card">
+    <div class="login-logo">Jumia</div>
+    <h2>Price Benchmark Tool</h2>
+    <p>Entrez le mot de passe pour accéder à l'outil</p>
+    <input class="login-input" type="password" id="pw-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" id="login-btn" onclick="doLogin()">
+      <span id="login-label">Accéder</span>
+      <div class="login-spinner" id="login-spinner"></div>
+    </button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ APP ══════════════════════════════ -->
+<div id="app-page">
+  <header>
+    <div class="logo">Jumia</div>
+    <h1>Price Benchmark Tool</h1>
+    <button class="logout-btn" onclick="doLogout()">Se déconnecter</button>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-title">Entrée des SKUs</div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('manual')">Saisie manuelle</button>
+        <button class="tab" onclick="switchTab('upload')">Import fichier</button>
+      </div>
+
+      <div id="tab-manual">
+        <textarea id="sku-input" placeholder="Entrez les SKUs séparés par des virgules ou retours à la ligne&#10;Ex: AG153ELAA7, JE723APAB4, HI431ELAC2"></textarea>
+        <div class="action-row">
+          <button class="btn btn-secondary" onclick="clearAll()">Effacer</button>
+          <button class="btn btn-primary" id="btn-analyze" onclick="runBenchmark()">Analyser les SKUs</button>
+        </div>
+      </div>
+
+      <div id="tab-upload" style="display:none;">
+        <label class="upload-zone" id="drop-zone">
+          <input type="file" id="file-input" accept=".csv,.xlsx,.xls" onchange="handleFile(this)">
+          <div style="font-size:28px;margin-bottom:8px;">📂</div>
+          <div>Glisser-déposer un fichier CSV ou Excel ici</div>
+          <div style="font-size:12px;color:#aaa;margin-top:4px;">Colonne requise : "SKU" — formats : .csv, .xlsx</div>
+        </label>
+        <div id="file-name" class="file-name"></div>
+        <div class="action-row">
+          <button class="btn btn-primary" id="btn-upload" onclick="runUpload()" disabled>Lancer le benchmark</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="loader" id="loader"><div class="spinner"></div><span id="loader-text">Analyse en cours...</span></div>
+    <div id="error-box"></div>
+
+    <div class="metrics" id="metrics" style="display:none;">
+      <div class="metric"><div class="metric-label">Produits analysés</div><div class="metric-value" id="m-total">—</div><div class="metric-sub" id="m-total-sub"></div></div>
+      <div class="metric"><div class="metric-label">Jumia moins cher</div><div class="metric-value green" id="m-win">—</div><div class="metric-sub" id="m-win-sub"></div></div>
+      <div class="metric"><div class="metric-label">Jumia plus cher</div><div class="metric-value red" id="m-lose">—</div><div class="metric-sub" id="m-lose-sub"></div></div>
+      <div class="metric"><div class="metric-label">Écart moyen</div><div class="metric-value orange" id="m-gap">—</div><div class="metric-sub">vs concurrent le moins cher</div></div>
+    </div>
+
+    <div class="card" id="results-card" style="display:none;">
+      <div class="section-tabs">
+        <button class="stab active" onclick="switchSTab('table')">Tableau comparatif</button>
+        <button class="stab" onclick="switchSTab('summary')">Résumé par concurrent</button>
+      </div>
+      <div id="stab-table" class="tab-content active">
+        <div class="filter-row">
+          <select id="filter-status" onchange="renderTable()">
+            <option value="">Tous les produits</option>
+            <option value="win">Jumia moins cher</option>
+            <option value="lose">Jumia plus cher</option>
+            <option value="tie">À égalité</option>
+            <option value="not_found">Non trouvé</option>
+          </select>
+          <select id="filter-comp" onchange="renderTable()">
+            <option value="">Tous les concurrents</option>
+            <option value="konga">Konga.com</option>
+            <option value="slot">Slot.ng</option>
+            <option value="payporte">PayPorte.com</option>
+            <option value="fouani">Fouanistore.com</option>
+          </select>
+          <div style="flex:1;"></div>
+          <button class="btn btn-secondary" onclick="exportExcel()">⬇ Export Excel</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th style="width:230px;">Produit</th>
+              <th>Prix Jumia</th><th>Konga</th><th>Slot.ng</th><th>PayPorte</th><th>Fouani</th><th>Statut</th>
+            </tr></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="stab-summary" class="tab-content">
+        <div id="summary-body"></div>
+      </div>
+    </div>
+
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">📊</div>
+      <div>Entrez des SKUs ci-dessus et lancez l'analyse pour voir le benchmark</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let allResults = [];
+let uploadedFile = null;
+
+// ── AUTH ──
+async function doLogin() {
+  const pw = document.getElementById('pw-input').value.trim();
+  if (!pw) return;
+  document.getElementById('login-btn').disabled = true;
+  document.getElementById('login-label').style.display = 'none';
+  document.getElementById('login-spinner').classList.add('visible');
+  document.getElementById('login-error').textContent = '';
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ password: pw })
+    });
+    const d = await r.json();
+    if (d.success) {
+      showApp();
+    } else {
+      document.getElementById('login-error').textContent = 'Mot de passe incorrect.';
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+    }
+  } catch (e) {
+    document.getElementById('login-error').textContent = 'Erreur de connexion au serveur.';
+  } finally {
+    document.getElementById('login-btn').disabled = false;
+    document.getElementById('login-label').style.display = 'inline';
+    document.getElementById('login-spinner').classList.remove('visible');
+  }
+}
+
+async function doLogout() {
+  await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+  document.getElementById('app-page').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-input').focus();
+}
+
+function showApp() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app-page').style.display = 'block';
+}
+
+// Vérifier si déjà connecté au chargement
+window.addEventListener('load', async () => {
+  try {
+    const r = await fetch('/api/auth-check', { credentials: 'include' });
+    const d = await r.json();
+    if (d.authenticated) showApp();
+    else document.getElementById('pw-input').focus();
+  } catch (e) {
+    document.getElementById('pw-input').focus();
+  }
+});
+
+// ── TABS ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) =>
+    t.classList.toggle('active', (tab === 'manual' && i === 0) || (tab === 'upload' && i === 1)));
+  document.getElementById('tab-manual').style.display = tab === 'manual' ? 'block' : 'none';
+  document.getElementById('tab-upload').style.display = tab === 'upload' ? 'block' : 'none';
+}
+function switchSTab(tab) {
+  document.querySelectorAll('.stab').forEach((t, i) =>
+    t.classList.toggle('active', (tab === 'table' && i === 0) || (tab === 'summary' && i === 1)));
+  document.querySelectorAll('.tab-content').forEach((t, i) =>
+    t.classList.toggle('active', (tab === 'table' && i === 0) || (tab === 'summary' && i === 1)));
+}
+
+// ── FILE ──
+function clearAll() {
+  document.getElementById('sku-input').value = '';
+  allResults = [];
+  document.getElementById('metrics').style.display = 'none';
+  document.getElementById('results-card').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'block';
+  document.getElementById('error-box').innerHTML = '';
+}
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  uploadedFile = file;
+  document.getElementById('file-name').textContent = '📄 ' + file.name;
+  document.getElementById('btn-upload').disabled = false;
+}
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = '#E8501A'; });
+dz.addEventListener('dragleave', () => { dz.style.borderColor = ''; });
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.style.borderColor = '';
+  const file = e.dataTransfer.files[0];
+  if (file) { document.getElementById('file-input').files = e.dataTransfer.files; handleFile({ files: [file] }); }
+});
+
+// ── LOADING ──
+function setLoading(on, text = 'Analyse en cours...') {
+  document.getElementById('loader').classList.toggle('visible', on);
+  document.getElementById('loader-text').textContent = text;
+  document.getElementById('progress-bar').classList.toggle('visible', on);
+  document.getElementById('btn-analyze').disabled = on;
+  document.getElementById('btn-upload').disabled = on;
+  if (on) { animateProgress(); }
+  else {
+    document.getElementById('progress-fill').style.width = '100%';
+    setTimeout(() => {
+      document.getElementById('progress-bar').classList.remove('visible');
+      document.getElementById('progress-fill').style.width = '0%';
+    }, 400);
+  }
+}
+function animateProgress() {
+  let w = 0;
+  const iv = setInterval(() => {
+    w = Math.min(w + Math.random() * 8, 85);
+    document.getElementById('progress-fill').style.width = w + '%';
+    if (!document.getElementById('loader').classList.contains('visible')) clearInterval(iv);
+  }, 600);
+}
+function showError(msg) {
+  document.getElementById('error-box').innerHTML = `<div class="alert alert-error">❌ ${msg}</div>`;
+}
+
+// ── BENCHMARK ──
+async function runBenchmark() {
+  const raw = document.getElementById('sku-input').value.trim();
+  if (!raw) { showError('Veuillez entrer au moins un SKU.'); return; }
+  const skus = raw.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
+  document.getElementById('error-box').innerHTML = '';
+  setLoading(true, `Analyse de ${skus.length} SKU(s)...`);
+  try {
+    const r = await fetch('/api/benchmark', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skus })
+    });
+    if (r.status === 401) { doLogout(); return; }
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    allResults = d.results;
+    displayResults();
+  } catch (e) {
+    showError('Erreur : ' + e.message);
+  } finally { setLoading(false); }
+}
+
+async function runUpload() {
+  if (!uploadedFile) return;
+  document.getElementById('error-box').innerHTML = '';
+  setLoading(true, 'Lecture du fichier et analyse...');
+  const formData = new FormData();
+  formData.append('file', uploadedFile);
+  try {
+    const r = await fetch('/api/benchmark/upload', { method: 'POST', credentials: 'include', body: formData });
+    if (r.status === 401) { doLogout(); return; }
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    allResults = d.results;
+    displayResults();
+  } catch (e) {
+    showError('Erreur : ' + e.message);
+  } finally { setLoading(false); }
+}
+
+// ── DISPLAY ──
+function displayResults() {
+  if (!allResults.length) return;
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('metrics').style.display = 'grid';
+  document.getElementById('results-card').style.display = 'block';
+  updateMetrics(); renderTable(); renderSummary();
+}
+function updateMetrics() {
+  const found = allResults.filter(r => r.status !== 'not_found');
+  const wins = found.filter(r => r.status === 'win').length;
+  const loses = found.filter(r => r.status === 'lose').length;
+  const gaps = found.map(r => {
+    const jp = r.jumia?.price || 0;
+    const comps = (r.competitors || []).filter(c => c.found && c.price > 0).map(c => c.price);
+    return (!comps.length || !jp) ? 0 : Math.abs(jp - Math.min(...comps));
+  }).filter(Boolean);
+  const avgGap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
+  document.getElementById('m-total').textContent = found.length;
+  document.getElementById('m-total-sub').textContent = `sur ${allResults.length} SKUs`;
+  document.getElementById('m-win').textContent = wins;
+  document.getElementById('m-win-sub').textContent = found.length ? Math.round(wins / found.length * 100) + '% des produits' : '';
+  document.getElementById('m-lose').textContent = loses;
+  document.getElementById('m-lose-sub').textContent = found.length ? Math.round(loses / found.length * 100) + '% des produits' : '';
+  document.getElementById('m-gap').textContent = avgGap ? '₦' + Math.round(avgGap).toLocaleString() : '—';
+}
+function fmtPrice(p) { return p ? '₦' + Number(p).toLocaleString() : '—'; }
+function compClass(jp, cp) { if (!cp || !jp) return 'na'; return cp > jp ? 'higher' : cp < jp ? 'lower' : ''; }
+function statusBadge(s) {
+  return { win: '<span class="badge badge-win">Jumia gagne</span>', lose: '<span class="badge badge-lose">Jumia plus cher</span>', tie: '<span class="badge badge-tie">À égalité</span>', not_found: '<span class="badge badge-nd">Non trouvé</span>', no_data: '<span class="badge badge-nd">Pas de données</span>' }[s] || '<span class="badge badge-nd">—</span>';
+}
+function renderTable() {
+  const fStatus = document.getElementById('filter-status').value;
+  const fComp = document.getElementById('filter-comp').value;
+  let rows = allResults;
+  if (fStatus) rows = rows.filter(r => r.status === fStatus);
+  if (fComp) rows = rows.filter(r => (r.competitors || []).some(c => c.source === fComp && c.found));
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = rows.map(r => {
+    const j = r.jumia || {};
+    const cm = {};
+    (r.competitors || []).forEach(c => cm[c.source] = c);
+    const jp = j.price || 0;
+    const imgEl = j.image ? `<img class="prod-img" src="${j.image}" alt="">` : `<div class="prod-img-ph">IMG</div>`;
+    const nameLink = j.url ? `<a href="${j.url}" target="_blank" style="color:inherit;text-decoration:none;">${j.name || r.sku}</a>` : (j.name || r.sku);
+    const compCells = ['konga','slot','payporte','fouani'].map(src => {
+      const c = cm[src];
+      if (!c || !c.found || !c.price) return `<td><span class="comp-price na">—</span></td>`;
+      const cls = compClass(jp, c.price);
+      return `<td>${c.url ? `<a href="${c.url}" target="_blank" style="text-decoration:none;">` : ''}<span class="comp-price ${cls}">${fmtPrice(c.price)}</span>${c.url ? '</a>' : ''}</td>`;
+    }).join('');
+    return `<tr><td><div class="prod-cell">${imgEl}<div><div class="prod-name">${nameLink}</div><div class="prod-sku">${r.sku}</div></div></div></td><td><span class="price ${r.status==='win'?'price-win':''}">${fmtPrice(jp)}</span></td>${compCells}<td>${statusBadge(r.status)}</td></tr>`;
+  }).join('') || `<tr><td colspan="7" style="text-align:center;padding:24px;color:#aaa;">Aucun résultat pour ces filtres</td></tr>`;
+}
+function renderSummary() {
+  const sources = [{ key:'konga', label:'Konga.com' },{ key:'slot', label:'Slot.ng' },{ key:'payporte', label:'PayPorte.com' },{ key:'fouani', label:'Fouanistore.com' }];
+  const found = allResults.filter(r => r.status !== 'not_found');
+  document.getElementById('summary-body').innerHTML = sources.map(s => {
+    const prices = found.map(r => {
+      const c = (r.competitors || []).find(x => x.source === s.key);
+      return (c && c.found && c.price) ? { comp: c.price, jumia: r.jumia?.price || 0 } : null;
+    }).filter(Boolean);
+    const wins = prices.filter(p => p.jumia <= p.comp).length;
+    const pct = prices.length ? Math.round(wins / prices.length * 100) : 0;
+    return `<div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);">
+      <div style="width:140px;font-weight:500;">${s.label}</div>
+      <div style="flex:1;background:var(--bg);border-radius:6px;height:10px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--green);border-radius:6px;"></div></div>
+      <div style="width:80px;font-size:12px;color:var(--green);">${pct}% Jumia ↓</div>
+      <div style="width:80px;font-size:12px;color:var(--text-muted);">${prices.length} produits</div>
+    </div>`;
+  }).join('');
+}
+async function exportExcel() {
+  if (!allResults.length) return;
+  try {
+    const r = await fetch('/api/export', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ results: allResults }) });
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'benchmark_jumia.xlsx'; a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) { showError('Erreur export : ' + e.message); }
+}
+</script>
+</body>
+</html>
